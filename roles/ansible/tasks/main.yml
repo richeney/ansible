@@ -1,0 +1,59 @@
+---
+# Custom role for Ansible installation ready for Azure management
+# Based on https://docs.microsoft.com/en-us/azure/virtual-machines/linux/ansible-install-configure
+
+- name: install ansible prequisite packages
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - libssl-dev
+    - libffi-dev
+    - python-dev
+    - python-pip
+
+# pip install the Azure version of the Ansible package.
+
+- name: pip install ansible[azure]
+  pip:
+    name: ansible[azure]
+    executable: pip
+  become: true
+
+# Download the Azure python script for dynamic inventories based on tags
+# Reference: https://docs.microsoft.com/en-us/azure/ansible/ansible-manage-azure-dynamic-inventories
+
+- name: download azure_rm.py dynamic inventory script
+  uri:
+    url: https://raw.githubusercontent.com/ansible/ansible/devel/contrib/inventory/azure_rm.py
+    dest: /usr/local/bin/azure_rm.py
+  become: true
+
+- name: Changing permissions of "/usr/local/bin/azure_rm.py", adding "+x"
+  file: dest=/usr/local/bin/azure_rm.py mode=a+x
+
+# Upload a local ansible directory
+
+- name: copy ansible directory to the user's home directory
+  copy:
+    src: /ansible/ # make this a variable
+    dest: ~/ansible
+  become: true
+  become_user: overlord # make this a variable
+
+# Copy up the credentials file
+
+- name: check for ~/.azure/credentials
+  local_action: stat path=~/.azure/credentials
+  become: yes
+  become_user: richeney # local user
+  register: credentials
+
+- name: copy up the credentials file if it exists
+  copy:
+    src: ~/.azure/credentials
+    dest: ~/.azure
+    mode: 0600
+  when: credentials.stat.exists
+  become: true
+  become_user: overlord # make this a variable

@@ -1,0 +1,35 @@
+---
+# Tasks file for Azure CLI installation on Ubuntu
+# Based on https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest
+
+- name: install az prequisite packages
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - apt-transport-https
+    - lsb-release
+    - software-properties-common
+    - dirmngr
+
+# add the apt repo for cli
+- name: add az apt repository
+  apt_repository:
+    repo: 'deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main'
+    state: present
+    filename: nginx
+    update_cache: yes
+
+# Add the Microsoft signing key
+- name: add microsoft apt-key
+  apt_key:
+    keyserver: packages.microsoft.com
+    keyring: /etc/apt/trusted.gpg.d/Microsoft.gpg
+    id: BC528686B50D79E339D3721CEB3E94ADBE1229CF
+    state: present
+
+# Update the cache and install cli
+- name: Update repositories cache and install "cli" package
+  apt:
+    name: azure-cli
+    update_cache: yes

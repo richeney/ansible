@@ -1,0 +1,6 @@
+- hosts: management
+  remote_user: overlord
+  become: true
+  roles:
+     - { role: az }
+     - { role: ansible }
